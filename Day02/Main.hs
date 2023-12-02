@@ -14,11 +14,9 @@ parseTurn l = toTurn (map (splitOn " ") l) (0, 0, 0)
   where
     toTurn :: [[String]] -> Turn -> Turn
     toTurn [] acc = acc
-    toTurn ([v, c] : l) (r, g, b)
-      | c == "red" = toTurn l (r + (read v :: Int), g, b)
-      | c == "green" = toTurn l (r, g + (read v :: Int), b)
-      | c == "blue" = toTurn l (r, g, b + (read v :: Int))
-    toTurn _ acc = acc
+    toTurn ([v, "red"] : l) (r, g, b) = toTurn l (r + (read v :: Int), g, b)
+    toTurn ([v, "green"] : l) (r, g, b) = toTurn l (r, g + (read v :: Int), b)
+    toTurn ([v, "blue"] : l) (r, g, b) = toTurn l (r, g, b + (read v :: Int))
 
 main = do
   input <- readFile path
