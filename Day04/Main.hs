@@ -4,7 +4,7 @@ import Data.List (find)
 import Data.List.Split (splitOn)
 import Data.Maybe (fromMaybe)
 
-path = "inp2.txt"
+path = "inp.txt"
 
 type Card = ([Int], [Int])
 
@@ -14,8 +14,7 @@ main = do
   input <- readFile path
   let cards = map ((\[f, s] -> (f, s)) . map (map (\x -> read x :: Int) . words) . splitOn " | " . drop 2 . dropWhile (/= ':')) $ lines input
   print $ sum $ map cardValue cards
-  print cards
-  print $ wonCards (head cards) cards
+  print $ sum $ map (`processCard` cards) cards
 
 validLength :: Card -> Int
 validLength (w, v) = length $ filter (`elem` w) v
@@ -28,11 +27,25 @@ cardValue c = calcVal $ validLength c
       | n <= 0 = 0
       | otherwise = 2 ^ (n - 1)
 
-wonCards :: Card -> [Card] -> [Card]
-wonCards c l = take (validLength c) $ tail $ dropWhile (/= c) l
-
 cardWinMap :: [Card] -> CardMap
-cardWinMap l = map (\x -> (x, wonCards x l)) l
+cardWinMap [] = []
+cardWinMap (c : cs) = (c, take (validLength c) cs) : cardWinMap cs
 
 getFromMap :: Card -> CardMap -> [Card]
 getFromMap c cm = snd $ fromMaybe (([], []), []) (find (\(x, _) -> x == c) cm)
+
+processCard :: Card -> [Card] -> Int
+processCard card cards = process [(1, card)] 0 (cardWinMap cards)
+  where
+    process :: [(Int, Card)] -> Int -> CardMap -> Int
+    process [] acc _ = acc
+    process ((n, c) : cs) acc map = process (newCards (n, c) cs map) (acc + n) map
+
+    newCards :: (Int, Card) -> [(Int, Card)] -> CardMap -> [(Int, Card)]
+    newCards (n, c) cs map = foldr (\x -> addCard (n, x)) cs (getFromMap c map)
+
+    addCard :: (Int, Card) -> [(Int, Card)] -> [(Int, Card)]
+    addCard (n, c) [] = [(n, c)]
+    addCard (ne, ce) ((nl, cl) : l)
+      | ce == cl = (ne + nl, ce) : l
+      | otherwise = (nl, cl) : addCard (ne, ce) l
